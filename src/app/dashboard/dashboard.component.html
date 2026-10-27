@@ -1,0 +1,223 @@
+
+<div class="dashboard">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <h2>📅 Event Registration</h2>
+
+    <nav>
+      <a class="nav-item active">▦ Dashboard</a>
+      <a class="nav-item">☷ Registrations</a>
+      <a class="nav-item">♙ Manage Users</a>
+      <a class="nav-item">▥ Reports</a>
+      <a class="nav-item">⚙ Settings</a>
+    </nav>
+
+    <div class="admin-profile">
+      <div class="avatar">A</div>
+      <div>
+        <strong>Admin</strong>
+        <small>Event Administrator</small>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <header class="topbar">
+      <div>
+        <h1>Admin Dashboard</h1>
+        <p>Overview of Event Registrations</p>
+      </div>
+
+      <div class="topbar-right">
+        <span>{{ today | date:'dd MMM yyyy' }}</span>
+        <button class="refresh-btn" (click)="loadDashboardData()">
+          ↻ Refresh
+        </button>
+      </div>
+    </header>
+
+    <!-- Loading and error states -->
+    <div class="message" *ngIf="loading">
+      Loading dashboard data...
+    </div>
+
+    <div class="error-message" *ngIf="errorMessage">
+      {{ errorMessage }}
+      <button (click)="loadDashboardData()">Retry</button>
+    </div>
+
+    <ng-container *ngIf="!loading && !errorMessage">
+
+      <!-- Summary Cards -->
+      <section class="stats-grid">
+
+        <article class="stat-card blue">
+          <div class="stat-icon">♙</div>
+          <h2>{{ totalRegistrations }}</h2>
+          <p>Total Registrations</p>
+          <small>All saved registrations</small>
+        </article>
+
+        <article class="stat-card green">
+          <div class="stat-icon">🎓</div>
+          <h2>{{ students }}</h2>
+          <p>Students</p>
+          <small>
+            {{ totalRegistrations ? ((students / totalRegistrations) * 100 | number:'1.0-0') : 0 }}% of total
+          </small>
+        </article>
+
+        <article class="stat-card purple">
+          <div class="stat-icon">🏢</div>
+          <h2>{{ professionals }}</h2>
+          <p>Working Professionals</p>
+          <small>Non-student registrations</small>
+        </article>
+
+        <article class="stat-card orange">
+          <div class="stat-icon">₹</div>
+          <h2>₹ {{ totalAmount | number:'1.0-2' }}</h2>
+          <p>Total Amount</p>
+          <small>From recorded online payments</small>
+        </article>
+
+      </section>
+
+      <!-- Analytics -->
+      <section class="analytics-grid">
+
+        <article class="panel attendance-panel">
+          <h3>Registrations by Attendance Type</h3>
+
+          <div class="attendance-content">
+            <div class="donut"
+                 [style.background]="attendanceGradient">
+              <div class="donut-center">
+                <strong>{{ totalRegistrations }}</strong>
+                <span>Total</span>
+              </div>
+            </div>
+
+            <div class="legend">
+              <p>
+                <span class="dot blue-dot"></span>
+                Individual
+                <strong>{{ individualRegistrations }}</strong>
+              </p>
+              <p>
+                <span class="dot purple-dot"></span>
+                Organization
+                <strong>{{ organizationRegistrations }}</strong>
+              </p>
+            </div>
+          </div>
+        </article>
+
+        <article class="panel accommodation-panel">
+          <h3>Accommodation Requirement</h3>
+
+          <div class="bar-chart">
+            <div class="bar-column">
+              <strong>{{ accommodationYes }}</strong>
+              <div class="bar green-bar"
+                   [style.height]="barHeight(accommodationYes)"></div>
+              <span>Yes</span>
+            </div>
+
+            <div class="bar-column">
+              <strong>{{ accommodationNo }}</strong>
+              <div class="bar blue-bar"
+                   [style.height]="barHeight(accommodationNo)"></div>
+              <span>No</span>
+            </div>
+          </div>
+        </article>
+
+      </section>
+
+      <!-- Breakdown Cards -->
+      <section class="breakdown-grid">
+
+        <article class="panel breakdown-card">
+          <h3>Meal Preference</h3>
+          <p>Vegetarian: <strong>{{ vegCount }}</strong></p>
+          <p>Non-vegetarian: <strong>{{ nonVegCount }}</strong></p>
+          <p>Vegan: <strong>{{ veganCount }}</strong></p>
+        </article>
+
+        <article class="panel breakdown-card">
+          <h3>Room Type</h3>
+          <p>Single: <strong>{{ singleRoomCount }}</strong></p>
+          <p>Double: <strong>{{ doubleRoomCount }}</strong></p>
+        </article>
+
+        <article class="panel breakdown-card">
+          <h3>Payment Method</h3>
+          <p>UPI: <strong>{{ upiCount }}</strong></p>
+          <p>Card: <strong>{{ cardCount }}</strong></p>
+          <p>Cash: <strong>{{ cashCount }}</strong></p>
+        </article>
+
+      </section>
+
+      <!-- Recent Registrations -->
+      <section class="panel registrations-panel">
+
+        <div class="section-heading">
+          <div>
+            <h3>Recent Registrations</h3>
+            <p>Latest registrations saved in the database</p>
+          </div>
+
+          <span class="record-count">
+            {{ registrations.length }} records
+          </span>
+        </div>
+
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Student</th>
+                <th>Attendance</th>
+                <th>Accommodation</th>
+                <th>Payment</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              <tr *ngFor="let registration of registrations; let i = index">
+                <td>{{ i + 1 }}</td>
+                <td>{{ registration.fullName }}</td>
+                <td>{{ registration.email }}</td>
+                <td>{{ registration.student ? 'Yes' : 'No' }}</td>
+                <td>{{ registration.attendanceType }}</td>
+                <td>{{ registration.accommodationRequired ? 'Yes' : 'No' }}</td>
+                <td>
+                  <span class="payment-badge">
+                    {{ getPaymentMethod(registration) }}
+                  </span>
+                </td>
+              </tr>
+
+              <tr *ngIf="registrations.length === 0">
+                <td colspan="7" class="empty-state">
+                  No registrations found. Submit a registration to see it here.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+      </section>
+
+    </ng-container>
+
+  </main>
+</div>
